@@ -1,0 +1,16 @@
+.DS_Store
+**/DerivedData/
+**/.build/
+**/.swiftpm/
+build/
+.gradle/
+.kotlin/
+.idea/
+local.properties
+*.iml
+shared/build/
+iosApp/Pods/
+iosApp/NativeBooks.xcodeproj/project.xcworkspace/xcuserdata/
+iosApp/NativeBooks.xcodeproj/xcuserdata/
+iosApp/Configuration/NewRelic.local.xcconfig
+*.xcuserstate

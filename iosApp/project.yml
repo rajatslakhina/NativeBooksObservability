@@ -1,0 +1,88 @@
+name: NativeBooks
+
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+
+configs:
+  Debug: debug
+  Release: release
+
+packages:
+  Observability:
+    path: ../Packages/NativeObservability
+  SharedKMP:
+    path: ../Packages/SharedKMP
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  NativeBooks:
+    type: application
+    platform: iOS
+    sources:
+      - path: NativeBooks
+    configFiles:
+      Debug: Configuration/NewRelic.xcconfig
+      Release: Configuration/NewRelic.xcconfig
+    info:
+      path: NativeBooks/Info.plist
+      properties:
+        CFBundleDisplayName: Native Books
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NewRelicLicenseKey: $(NEW_RELIC_LICENSE_KEY)
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen:
+          UIColorName: ""
+        UIStatusBarStyle: UIStatusBarStyleDefault
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.nativebooks
+        PRODUCT_NAME: NativeBooks
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+    dependencies:
+      - package: Observability
+        product: Observability
+      - package: SharedKMP
+        product: SharedKMP
+
+  NativeBooksTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NativeBooksTests
+    dependencies:
+      - target: NativeBooks
+      - package: SharedKMP
+        product: SharedKMP
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.nativebooks.tests
+        GENERATE_INFOPLIST_FILE: YES
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+
+schemes:
+  NativeBooks:
+    build:
+      targets:
+        NativeBooks: all
+        NativeBooksTests: [test]
+    test:
+      gatherCoverageData: true
+      targets:
+        - NativeBooksTests
+    run:
+      config: Debug
+    archive:
+      config: Release
