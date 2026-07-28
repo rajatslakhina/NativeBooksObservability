@@ -43,6 +43,24 @@ The fake API loads three books per page. Search for `architecture` to see a succ
 request, search for `error` to exercise the typed HTTP 503 error state, or use **Load more** to see
 the in-flight pagination state preserve the existing rows.
 
+The shared state transitions are request-driven:
+
+```text
+Initial load:  Idle -> Loading -> Success(result)
+Search:        query -> debounce -> Loading -> Success(result) / Error(apiError)
+Pagination:    Success(existing, Loading) -> Success(existing + next page, Settled)
+```
+
+`Success` owns the result and pagination data that belong together. The feature intentionally
+publishes one atomic `SduiBooksUiState` instead of combining independent status, result, and
+pagination streams. `StateFlow` may conflate intermediate render states, so correctness depends on
+the latest complete snapshot rather than observing every transition.
+
+Rows use section-scoped native identities such as `favorites.atomic-habits` and
+`all.atomic-habits`. This is required because the same book can appear in both sections. It avoids
+duplicate identity warnings and undefined layout reuse in SwiftUI `LazyVStack`; Compose uses the
+same `sectionId.bookId` rule for lazy-list keys.
+
 See [the SDUI architecture and scale analysis](docs/SDUI_ARCHITECTURE.md) for the reactive flow,
 `combine`/conflation guidance, platform configuration example, performance characteristics, and
 memory-leak safeguards.
@@ -250,17 +268,27 @@ These logs deliberately report metadata and identifiers rather than response bod
 
 ```sh
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
-./gradlew :shared:testDebugUnitTest \
-  :shared:linkReleaseFrameworkIosArm64 \
-  :shared:linkReleaseFrameworkIosSimulatorArm64
+./gradlew :shared:allTests \
+  :androidApp:assembleDebug \
+  :androidApp:assembleDebugAndroidTest
 
 swift test --package-path Packages/NativeObservability
 ./scripts/build-shared-kmp-package.sh
 
-./gradlew :androidApp:assembleDebug :androidApp:lintDebug
+cd iosApp
+xcodebuild -workspace NativeBooks.xcworkspace \
+  -scheme NativeBooks \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO build
 ```
 
-KMP tests verify login validation, dummy book data, repository caching, the exact `traceparent` header, and start/use/end lifecycle behavior. Swift package and iOS tests verify W3C context validity, synchronous native lifecycle acknowledgement, duplicate-end rejection, and enrichment precedence. The Android Compose instrumentation test verifies the prefilled login opens the KMP-backed library.
+KMP tests verify login validation, dummy book data, repository caching, the exact `traceparent`
+header, start/use/end lifecycle behavior, SDUI state transitions, debounced API search, pagination,
+error handling, and observation cancellation. Swift package and iOS tests verify W3C context
+validity, synchronous native lifecycle acknowledgement, duplicate-end rejection, enrichment
+precedence, and delivery of shared SDUI search results to Swift. The Android Compose instrumentation
+test verifies login, native SDUI rendering, and a debounced KMP API search result.
 
 ## Dependency versions
 
