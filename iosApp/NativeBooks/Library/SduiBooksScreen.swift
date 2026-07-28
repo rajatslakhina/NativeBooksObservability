@@ -163,12 +163,19 @@ struct SduiBooksScreen: View {
         } else {
             switch section.definition.componentType {
             case .bookRow:
-                ForEach(section.items, id: \.book.id) { item in
+                ForEach(
+                    section.items.map {
+                        ScopedSduiBookItem(
+                            sectionID: section.definition.id,
+                            item: $0
+                        )
+                    }
+                ) { scopedItem in
                     SduiBookRow(
-                        item: item,
+                        item: scopedItem.item,
                         showReadingTime: state.showReadingTime,
                         onToggleFavorite: {
-                            viewModel.toggleFavorite(bookId: item.book.id)
+                            viewModel.toggleFavorite(bookId: scopedItem.item.book.id)
                         }
                     )
                 }
@@ -217,6 +224,17 @@ struct SduiBooksScreen: View {
         observation?.cancel()
         observation = nil
         viewModel.clear()
+    }
+}
+
+/// SwiftUI flattens nested `ForEach` children inside a `LazyVStack`, so a book that appears in
+/// Favourites and All books must have a section-scoped identity.
+private struct ScopedSduiBookItem: Identifiable {
+    let sectionID: String
+    let item: SduiBookItemState
+
+    var id: String {
+        "\(sectionID).\(item.book.id)"
     }
 }
 
