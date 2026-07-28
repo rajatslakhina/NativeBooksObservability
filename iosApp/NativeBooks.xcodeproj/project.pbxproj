@@ -14,6 +14,7 @@
 		4E790251A5F50D27F0C5693A /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDC840FD4D9BF5CA445F222A /* LibraryView.swift */; };
 		6198CB78C2883BB1D97CB46F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057946AAFFA15529F21CDD6C /* LoginView.swift */; };
 		6F1BAA86D368B1C635B66C00 /* NativeBooksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD36D7A910DF0CC09CD25BBB /* NativeBooksTests.swift */; };
+		95C547CAD519B85AF0292B78 /* SduiBooksScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D486E5725B34E0EE45B167 /* SduiBooksScreen.swift */; };
 		9B40940B749E39EAA26EC475 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0E875531EB152F998D6B13 /* RootView.swift */; };
 		B0ACBC4A9BE255C67D89863C /* IosTracerProviderImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DB62F78FD01583B3EF60C7 /* IosTracerProviderImpl.swift */; };
 		C22866C71FD73800C08D54DD /* NativeBooksApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9052AAB2B66768DB9A21C541 /* NativeBooksApp.swift */; };
@@ -38,6 +39,7 @@
 		057946AAFFA15529F21CDD6C /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		181D48B0D7774A1818D149B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3A428261B73E2902469E5AC6 /* NativeObservability */ = {isa = PBXFileReference; lastKnownFileType = folder; name = NativeObservability; path = ../Packages/NativeObservability; sourceTree = SOURCE_ROOT; };
+		45D486E5725B34E0EE45B167 /* SduiBooksScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SduiBooksScreen.swift; sourceTree = "<group>"; };
 		52937E1878099B9E7190B409 /* BooksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BooksViewModel.swift; sourceTree = "<group>"; };
 		52A8973FA91E9829C0CBF321 /* NativeBooksTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NativeBooksTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C443F7BC3DC5993472BBA87 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				9272502884F76456BF0C03A6 /* BookCover.swift */,
 				52937E1878099B9E7190B409 /* BooksViewModel.swift */,
 				BDC840FD4D9BF5CA445F222A /* LibraryView.swift */,
+				45D486E5725B34E0EE45B167 /* SduiBooksScreen.swift */,
 			);
 			path = Library;
 			sourceTree = "<group>";
@@ -289,6 +292,7 @@
 				6198CB78C2883BB1D97CB46F /* LoginView.swift in Sources */,
 				C22866C71FD73800C08D54DD /* NativeBooksApp.swift in Sources */,
 				9B40940B749E39EAA26EC475 /* RootView.swift in Sources */,
+				95C547CAD519B85AF0292B78 /* SduiBooksScreen.swift in Sources */,
 				4104ADED6CF9BFFACC4982A9 /* TelemetrySheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

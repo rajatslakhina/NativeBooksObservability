@@ -5,6 +5,7 @@ Two standalone native host applications with:
 - email/password login
 - a five-book library
 - a book description screen opened by tapping a row
+- a native server-driven book explorer with favourites and shared search
 - KMP-owned business logic, repository, dummy Ktor API, and view-model state
 - native SwiftUI on iOS and native Jetpack Compose on Android
 - platform-owned OpenTelemetry tracing exported to New Relic
@@ -28,6 +29,23 @@ NativeBooks.xcworkspace
 └── Packages/SharedKMP                 local binary SPM package
     └── SharedKit.xcframework          built from shared/ Kotlin sources
 ```
+
+## Server-driven native screen
+
+After login, use the heart/document button in the library toolbar to open the new SDUI screen. Its
+Ktor screen and search endpoints, JSON models, search debounce, pagination, favourites, section
+projection, and state lifecycle are shared in KMP. Android collects the KMP `StateFlow` directly
+and iOS observes the same KMP ViewModel through a cancellable callback; neither platform adds a
+native ViewModel for this feature. Compose and SwiftUI still render fully native rows and search
+controls.
+
+The fake API loads three books per page. Search for `architecture` to see a successful debounced
+request, search for `error` to exercise the typed HTTP 503 error state, or use **Load more** to see
+the in-flight pagination state preserve the existing rows.
+
+See [the SDUI architecture and scale analysis](docs/SDUI_ARCHITECTURE.md) for the reactive flow,
+`combine`/conflation guidance, platform configuration example, performance characteristics, and
+memory-leak safeguards.
 
 KMP does not embed an iOS observability SDK. It asks the host application to create each native span through the delegate exported from `iosMain`:
 

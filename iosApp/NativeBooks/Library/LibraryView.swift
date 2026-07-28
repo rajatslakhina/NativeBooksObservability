@@ -29,7 +29,14 @@ struct LibraryView: View {
                     .accessibilityLabel("Telemetry details")
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SduiBooksScreen()
+                    } label: {
+                        Image(systemName: "heart.text.square")
+                    }
+                    .accessibilityLabel("Open server-driven books")
+
                     Menu {
                         Text(appState.signedInEmail)
                         Button("Reload books", systemImage: "arrow.clockwise", action: viewModel.reload)

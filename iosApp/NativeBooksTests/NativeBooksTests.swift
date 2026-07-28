@@ -53,4 +53,35 @@ final class NativeBooksTests: XCTestCase {
             "A second end must fail because the native registry already removed the span"
         )
     }
+
+    func testSharedSduiViewModelPublishesRemoteSearchResultToSwift() {
+        let viewModel = SduiBooksViewModel(
+            configuration: SduiScreenConfiguration(
+                titleOverride: nil,
+                showReadingTime: true,
+                searchDebounceMillis: 20,
+                initialFavoriteIds: ["atomic-habits"]
+            )
+        )
+        let loaded = expectation(description: "KMP search result observed in Swift")
+        var requestedSearch = false
+
+        let observation = viewModel.observe { state in
+            guard let success = state.status as? SduiSearchStatus.Success else { return }
+
+            if !requestedSearch {
+                requestedSearch = true
+                viewModel.setSearchQuery(query: "leadership")
+            } else if success.result.query == "leadership" {
+                XCTAssertEqual(success.result.components.count, 1)
+                XCTAssertEqual(success.result.components.first?.title, "Staff Engineer")
+                loaded.fulfill()
+            }
+        }
+
+        viewModel.start()
+        wait(for: [loaded], timeout: 3)
+        observation.cancel()
+        viewModel.clear()
+    }
 }

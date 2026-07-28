@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Timeline
@@ -64,6 +65,7 @@ fun LibraryScreen(
     observabilityStatus: ObservabilityStatus,
     viewModel: AndroidBooksViewModel,
     onBookSelected: (Book) -> Unit,
+    onOpenSduiBooks: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     val state = viewModel.uiState
@@ -97,6 +99,12 @@ fun LibraryScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenSduiBooks) {
+                        Icon(
+                            Icons.Default.FavoriteBorder,
+                            contentDescription = "Open server-driven books",
+                        )
+                    }
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(Icons.Default.Person, contentDescription = "Account menu")
