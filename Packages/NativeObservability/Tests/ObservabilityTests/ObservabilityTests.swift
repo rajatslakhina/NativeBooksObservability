@@ -3,6 +3,27 @@ import Foundation
 import XCTest
 
 final class ObservabilityTests: XCTestCase {
+    func testNewRelicAttributesOmitEmptyStringValues() {
+        let attributes: [String: ObservabilityValue] = [
+            "empty": .string(""),
+            "whitespace": .string("   \n"),
+            "name": .string("explore.search"),
+            "page": .int(1),
+        ]
+
+        let typed = attributes.newRelicAttributes
+        let stringified = attributes.newRelicStringAttributes
+
+        XCTAssertNil(typed["empty"])
+        XCTAssertNil(typed["whitespace"])
+        XCTAssertEqual(typed["name"] as? String, "explore.search")
+        XCTAssertEqual(typed["page"] as? Int, 1)
+        XCTAssertNil(stringified["empty"])
+        XCTAssertNil(stringified["whitespace"])
+        XCTAssertEqual(stringified["name"] as? String, "explore.search")
+        XCTAssertEqual(stringified["page"] as? String, "1")
+    }
+
     override func setUp() {
         super.setUp()
         ObservabilitySystem.resetForTesting()

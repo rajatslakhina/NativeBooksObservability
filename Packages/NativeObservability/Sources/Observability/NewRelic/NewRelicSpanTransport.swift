@@ -101,9 +101,11 @@ public final class NewRelicSpanTransport: EventTransportProtocol, @unchecked Sen
             entry.attributes["span.id"] = .string(entry.context.spanId)
             entry.attributes["duration.ms"] = .double(endedAt.timeIntervalSince(entry.startedAt) * 1_000)
 
-            if let interactionId = entry.interactionId {
+            if configuration.exportsToNewRelic {
                 recordStandardSpan(entry, status: effectiveStatus, endedAt: endedAt)
-                stopInteraction(interactionId)
+                if let interactionId = entry.interactionId {
+                    stopInteraction(interactionId)
+                }
                 recordEvent(type: "NativeSpan", name: entry.name, attributes: entry.attributes)
             } else {
                 Self.logger.info("Completed span '\(entry.name, privacy: .public)' \(entry.context.spanId, privacy: .public)")
@@ -117,12 +119,16 @@ public final class NewRelicSpanTransport: EventTransportProtocol, @unchecked Sen
         attributes: [String: ObservabilityValue],
         parentSpanId: String?
     ) -> NativeSpanContext {
-        guard let interactionId = startInteraction(name: name) else {
-            return .invalid
-        }
         let parent = parentSpanId.flatMap { spans[$0] }
+        // New Relic interactions describe a top-level user interaction; they are
+        // not a nestable span stack. Starting one for every child causes deeper
+        // successful spans to disappear on iOS. Keep the interaction on the root
+        // and submit every child through the standard network-span pipeline.
+        let interactionId = parent == nil ? startInteraction(name: name) : nil
         guard let generatedContext = newRelicSpanContext(parent: parent) else {
-            stopInteraction(interactionId)
+            if let interactionId {
+                stopInteraction(interactionId)
+            }
             Self.logger.error("New Relic did not generate a valid distributed trace context for '\(name, privacy: .public)'")
             return .invalid
         }
@@ -205,7 +211,10 @@ public final class NewRelicSpanTransport: EventTransportProtocol, @unchecked Sen
             statusCode: status.httpStatusCode,
             bytesSent: 0,
             bytesReceived: 0,
-            responseData: nil,
+            // The iOS manual network API requires response data even when the
+            // synthetic span has no response body. Passing nil makes successful
+            // requests disappear while the SDK may still retain error records.
+            responseData: Data(),
             traceHeaders: entry.traceHeaders,
             andParams: params
         )
@@ -349,7 +358,7 @@ enum NewRelicTraceContextParser {
     }
 }
 
-private extension Dictionary where Key == String, Value == ObservabilityValue {
+extension Dictionary where Key == String, Value == ObservabilityValue {
     var withCurrentNewRelicSession: Self {
         #if canImport(NewRelic)
         let sessionId = NewRelic.currentSessionId().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -364,15 +373,26 @@ private extension Dictionary where Key == String, Value == ObservabilityValue {
     }
 
     var newRelicAttributes: [String: Any] {
-        mapValues(\.newRelicValue)
+        compactMapValues { value in
+            guard !value.isEmptyNewRelicString else { return nil }
+            return value.newRelicValue
+        }
     }
 
     var newRelicStringAttributes: [String: Any] {
-        mapValues(\.newRelicStringValue)
+        compactMapValues { value in
+            guard !value.isEmptyNewRelicString else { return nil }
+            return value.newRelicStringValue
+        }
     }
 }
 
 private extension ObservabilityValue {
+    var isEmptyNewRelicString: Bool {
+        guard case .string(let value) = self else { return false }
+        return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var newRelicValue: Any {
         switch self {
         case .string(let value): value

@@ -31,4 +31,5 @@ kotlin {
 
 dependencies {
     api("com.newrelic.agent.android:android-agent:7.8.1")
+    testImplementation("junit:junit:4.13.2")
 }

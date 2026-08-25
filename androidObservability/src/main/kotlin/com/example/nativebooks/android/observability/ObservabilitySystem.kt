@@ -156,10 +156,13 @@ object ObservabilitySystem {
     ): NativeSpan {
         if (!NewRelic.isStarted()) return NativeSpan.Invalid
 
-        val interactionId = NewRelic.startInteraction(name)
-        val generatedContext = newRelicSpanContext(name, parent?.takeIf { it.isValid })
+        val validParent = parent?.takeIf { it.isValid }
+        // Interactions are top-level UI transactions, not a nestable span stack.
+        // Child operations are still submitted through recordStandardSpan().
+        val interactionId = if (validParent == null) NewRelic.startInteraction(name) else null
+        val generatedContext = newRelicSpanContext(name, validParent)
         if (generatedContext == null || !generatedContext.context.isValid) {
-            NewRelic.endInteraction(interactionId)
+            interactionId?.let(NewRelic::endInteraction)
             return NativeSpan.Invalid
         }
         val context = generatedContext.context
@@ -170,8 +173,8 @@ object ObservabilitySystem {
             startedAtNanos = System.nanoTime(),
             transactionState = generatedContext.transactionState,
             traceContext = generatedContext.traceContext,
-            attributes = attributes.toMutableMap().apply {
-                parent?.takeIf { it.isValid }?.let { put("parent.span.id", it.spanId) }
+            attributes = attributes.withoutBlankStringValues().toMutableMap().apply {
+                validParent?.let { put("parent.span.id", it.spanId) }
             },
         )
         return context
@@ -240,20 +243,20 @@ object ObservabilitySystem {
         } else {
             status.lowercase()
         }
-        span.attributes.putAll(attributes)
+        span.attributes.putAll(attributes.withoutBlankStringValues())
         span.attributes["trace.id"] = context.traceId
         span.attributes["span.id"] = context.spanId
         span.attributes["span.status"] = effectiveStatus
         span.attributes["duration.ms"] =
             ((System.nanoTime() - span.startedAtNanos) / 1_000_000.0).toString()
         span.attributes.putAll(currentSessionAttributes())
-        if (span.interactionId != null && NewRelic.isStarted()) {
+        if (NewRelic.isStarted()) {
             recordStandardSpan(span, effectiveStatus)
-            NewRelic.endInteraction(span.interactionId)
+            span.interactionId?.let(NewRelic::endInteraction)
             NewRelic.recordCustomEvent(
                 "NativeSpan",
                 span.name,
-                span.attributes.mapValues { it.value as Any },
+                span.attributes.toNewRelicAttributes(),
             )
         } else {
             println("[NativeBooks][NewRelic] Completed span ${span.name} ${context.spanId}")
@@ -263,7 +266,7 @@ object ObservabilitySystem {
 
     fun addSpanAttributes(context: NativeSpan, attributes: Map<String, String>): Boolean {
         val span = activeSpans[context.spanId] ?: return false
-        synchronized(span) { span.attributes.putAll(attributes) }
+        synchronized(span) { span.attributes.putAll(attributes.withoutBlankStringValues()) }
         return true
     }
 
@@ -275,7 +278,7 @@ object ObservabilitySystem {
         val span = activeSpans[context.spanId] ?: return false
         val eventAttributes = synchronized(span) {
             span.attributes.toMutableMap().apply {
-                putAll(attributes)
+                putAll(attributes.withoutBlankStringValues())
                 put("trace.id", context.traceId)
                 put("span.id", context.spanId)
                 putAll(currentSessionAttributes())
@@ -284,7 +287,7 @@ object ObservabilitySystem {
         return NewRelic.recordCustomEvent(
             "NativeSpanEvent",
             name,
-            eventAttributes.mapValues { it.value as Any },
+            eventAttributes.toNewRelicAttributes(),
         )
     }
 
@@ -299,7 +302,7 @@ object ObservabilitySystem {
         val errorAttributes = synchronized(span) {
             span.attributes["span.status"] = "error"
             span.attributes["error.message"] = message
-            if (domain != null) span.attributes["error.domain"] = domain
+            domain?.takeIf { it.isNotBlank() }?.let { span.attributes["error.domain"] = it }
             span.attributes.toMutableMap().apply {
                 put("trace.id", context.traceId)
                 put("span.id", context.spanId)
@@ -308,7 +311,7 @@ object ObservabilitySystem {
         }
         NewRelic.recordHandledException(
             IllegalStateException(message),
-            errorAttributes.mapValues { it.value as Any },
+            errorAttributes.toNewRelicAttributes(),
         )
         return true
     }
@@ -316,7 +319,7 @@ object ObservabilitySystem {
     fun recordBreadcrumb(name: String, attributes: Map<String, String> = emptyMap()): Boolean =
         NewRelic.recordBreadcrumb(
             name,
-            (attributes + currentSessionAttributes()).mapValues { it.value as Any },
+            (attributes + currentSessionAttributes()).toNewRelicAttributes(),
         )
 
     fun recordLog(
@@ -326,7 +329,7 @@ object ObservabilitySystem {
     ) {
         NewRelic.logAttributes(
             (attributes + currentSessionAttributes() + mapOf("message" to message))
-                .mapValues { it.value as Any },
+                .toNewRelicAttributes(),
         )
         when (severity.lowercase()) {
             "debug" -> NewRelic.logDebug(message)
@@ -356,7 +359,7 @@ object ObservabilitySystem {
             statusCode = if (status.equals("error", ignoreCase = true)) 500 else 200
             bytesSent = 0L
             bytesReceived = 0L
-            params = span.attributes
+            params = span.attributes.withoutBlankStringValues()
         }.end() ?: return
         transactionData.traceAttributes = traceAttributes
         TaskQueue.queue(HttpTransactionMeasurement(transactionData))
@@ -443,8 +446,13 @@ object ObservabilitySystem {
             }
         }
     }
-
 }
+
+internal fun Map<String, String>.withoutBlankStringValues(): Map<String, String> =
+    filterValues { it.isNotBlank() }
+
+private fun Map<String, String>.toNewRelicAttributes(): Map<String, Any> =
+    withoutBlankStringValues().mapValues { it.value as Any }
 
 private fun String.isValidW3cId(length: Int): Boolean =
     this.length == length &&
