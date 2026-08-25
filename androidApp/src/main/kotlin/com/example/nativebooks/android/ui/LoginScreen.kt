@@ -234,7 +234,7 @@ fun LoginScreen(
             ) {
                 Icon(Icons.Default.Timeline, contentDescription = null, tint = NativeBooksColors.Accent)
                 Text(
-                    text = "OpenTelemetry is active. ${observabilityStatus.destination}.",
+                    text = "New Relic monitoring is active. ${observabilityStatus.destination}.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = NativeBooksColors.SecondaryInk,
                 )

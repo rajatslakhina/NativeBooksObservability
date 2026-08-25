@@ -1,5 +1,2 @@
-// New Relic requires a LICENSE key (not a user API key) for OTLP ingest.
-NEW_RELIC_LICENSE_KEY =
-
-// Local secrets override the blank value above; this optional file is gitignored.
-#include? "NewRelic.local.xcconfig"
+// The application token is stored locally in the gitignored secrets file.
+#include "../Secrets.xcconfig"

@@ -41,7 +41,11 @@ struct LibraryView: View {
                         Text(appState.signedInEmail)
                         Button("Reload books", systemImage: "arrow.clockwise", action: viewModel.reload)
                         Button("Sign out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                            let context = NativeTracer.shared.startSpan(name: "login.signout", attributes: [:])
+                            let context = NativeTracer.shared.startSpan(
+                                name: "login.signout",
+                                attributes: [:],
+                                parent: nil
+                            )
                             _ = NativeTracer.shared.endSpan(context: context, attributes: [:], status: .ok)
                             appState.logOut()
                         }
@@ -63,7 +67,8 @@ struct LibraryView: View {
             if traceContext == nil {
                 traceContext = NativeTracer.shared.startSpan(
                     name: "screen.library.visible",
-                    attributes: ["screen.name": "library"]
+                    attributes: ["screen.name": "library"],
+                    parent: nil
                 )
             }
             viewModel.load()

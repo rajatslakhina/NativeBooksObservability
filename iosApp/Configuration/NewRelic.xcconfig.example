@@ -1,2 +1,0 @@
-// Copy to NewRelic.local.xcconfig and paste a New Relic license key after the equals sign.
-NEW_RELIC_LICENSE_KEY = YOUR_NEW_RELIC_LICENSE_KEY

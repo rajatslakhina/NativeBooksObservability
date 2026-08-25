@@ -37,7 +37,7 @@ class BooksViewModel(
         var spanStatus = KmpSpanStatus.UNSET
 
         return try {
-            repository.loadBooks().also {
+            repository.loadBooks(parent = context).also {
                 books = it
                 spanStatus = KmpSpanStatus.OK
             }

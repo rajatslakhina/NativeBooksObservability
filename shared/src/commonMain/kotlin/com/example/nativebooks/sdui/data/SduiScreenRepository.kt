@@ -4,7 +4,7 @@ import com.example.nativebooks.sdui.model.SduiScreenDefinition
 import com.example.nativebooks.sdui.model.SduiSearchResult
 
 internal class SduiScreenRepository(
-    private val api: DummySduiApi = DummySduiApi(),
+    private val api: SduiApi = OpenLibrarySduiApi(),
 ) {
     private var cachedScreen: SduiScreenDefinition? = null
 

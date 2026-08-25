@@ -1,5 +1,5 @@
 import Foundation
-import Observability
+@testable import Observability
 import XCTest
 
 final class ObservabilityTests: XCTestCase {
@@ -13,7 +13,7 @@ final class ObservabilityTests: XCTestCase {
         super.tearDown()
     }
 
-    func testSynchronousSpanReturnsValidW3CContext() {
+    func testSynchronousSpanDoesNotFabricateContextWithoutNewRelicAgent() {
         let status = configureConsolePipeline()
 
         let context = ObservabilitySystem.startSpan(
@@ -24,11 +24,7 @@ final class ObservabilityTests: XCTestCase {
 
         XCTAssertTrue(status.isConfigured)
         XCTAssertFalse(status.exportsToNewRelic)
-        XCTAssertTrue(context.isValid)
-        XCTAssertTrue(context.sampled)
-        XCTAssertEqual(context.traceId.count, 32)
-        XCTAssertEqual(context.spanId.count, 16)
-        XCTAssertEqual(context.traceparent?.count, 55)
+        XCTAssertEqual(context, .invalid)
     }
 
     func testExplicitSynchronousSpanLifecycle() {
@@ -44,9 +40,19 @@ final class ObservabilityTests: XCTestCase {
             status: .ok
         )
 
-        XCTAssertTrue(context.isValid)
-        XCTAssertTrue(acknowledged)
+        XCTAssertEqual(context, .invalid)
+        XCTAssertFalse(acknowledged)
         XCTAssertFalse(ObservabilitySystem.endSpan(context))
+    }
+
+    func testNewRelicTraceparentCreatesNativeContext() {
+        let context = NewRelicTraceContextParser.context(from: [
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        ])
+
+        XCTAssertEqual(context?.traceId, "4bf92f3577b34da6a3ce929d0e0e4736")
+        XCTAssertEqual(context?.spanId, "00f067aa0ba902b7")
+        XCTAssertEqual(context?.sampled, true)
     }
 
     func testSchemaEnricherUsesCallerWinsSemantics() {
@@ -81,7 +87,7 @@ final class ObservabilityTests: XCTestCase {
                 TelemetryProvider(
                     dependencies: .init(
                         newRelic: NewRelicConfiguration(
-                            licenseKey: nil,
+                            applicationToken: nil,
                             serviceName: "native-books-tests",
                             serviceVersion: "1.0"
                         )

@@ -1,4 +1,4 @@
-/// Sole owner of the native OpenTelemetry/New Relic transport.
+/// Sole owner of the native New Relic mobile-agent transport.
 public final class TelemetryProvider: ObservabilityProvider, @unchecked Sendable {
     public struct Dependencies: Sendable {
         public let newRelic: NewRelicConfiguration
@@ -24,16 +24,13 @@ public final class TelemetryProvider: ObservabilityProvider, @unchecked Sendable
 
         if isEnabled,
            dependencies.newRelic.exportsToNewRelic || dependencies.newRelic.useConsoleWhenUnconfigured {
-            transport = OTelSpanTransport.make(
-                configuration: dependencies.newRelic,
-                providerConfiguration: configuration
-            )
+            transport = NewRelicSpanTransport(configuration: dependencies.newRelic)
             status = ObservabilityStatus(
                 isConfigured: true,
                 exportsToNewRelic: dependencies.newRelic.exportsToNewRelic,
                 destination: dependencies.newRelic.exportsToNewRelic
-                    ? dependencies.newRelic.tracesEndpoint.host ?? "New Relic"
-                    : "Xcode console (add a New Relic license key to export)"
+                    ? "New Relic Mobile"
+                    : "Xcode console (add a New Relic app token to export)"
             )
         } else {
             transport = NoOpEventTransport()

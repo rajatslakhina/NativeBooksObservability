@@ -6,9 +6,6 @@ import SharedKit
 final class AppState: ObservableObject {
     @Published private(set) var isAuthenticated = false
     @Published private(set) var signedInEmail = ""
-    @Published var lastSpan: NativeSpanContext?
-    @Published var lastSpanEndAcknowledged: Bool?
-
     let observabilityStatus: ObservabilityStatus
 
     init(observabilityStatus: ObservabilityStatus) {
@@ -23,7 +20,5 @@ final class AppState: ObservableObject {
     func logOut() {
         signedInEmail = ""
         isAuthenticated = false
-        lastSpan = nil
-        lastSpanEndAcknowledged = nil
     }
 }

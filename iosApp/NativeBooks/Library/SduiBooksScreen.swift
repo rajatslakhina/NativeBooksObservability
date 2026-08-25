@@ -11,16 +11,7 @@ struct SduiBooksScreen: View {
     @State private var observation: SduiObservation?
 
     init() {
-        _viewModel = State(
-            initialValue: SduiBooksViewModel(
-                configuration: SduiScreenConfiguration(
-                    titleOverride: "Book explorer",
-                    showReadingTime: true,
-                    searchDebounceMillis: 220,
-                    initialFavoriteIds: ["atomic-habits"]
-                )
-            )
-        )
+        _viewModel = State(initialValue: Self.makeViewModel())
     }
 
     var body: some View {
@@ -213,17 +204,33 @@ struct SduiBooksScreen: View {
 
     private func beginObservation() {
         guard observation == nil else { return }
-        uiState = viewModel.currentState
-        observation = viewModel.observe { state in
+        viewModel.clear()
+
+        let freshViewModel = Self.makeViewModel()
+        viewModel = freshViewModel
+        uiState = freshViewModel.currentState
+        observation = freshViewModel.observe { state in
             uiState = state
         }
-        viewModel.start()
+        freshViewModel.start()
     }
 
     private func endObservation() {
         observation?.cancel()
         observation = nil
         viewModel.clear()
+        uiState = nil
+    }
+
+    private static func makeViewModel() -> SduiBooksViewModel {
+        SduiBooksViewModel(
+            configuration: SduiScreenConfiguration(
+                titleOverride: "Book explorer",
+                showReadingTime: true,
+                searchDebounceMillis: 220,
+                initialFavoriteIds: ["atomic-habits"]
+            )
+        )
     }
 }
 

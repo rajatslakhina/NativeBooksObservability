@@ -1,40 +1,38 @@
 package com.example.nativebooks.observability
 
-import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.StatusCode
-import java.util.concurrent.ConcurrentHashMap
+import com.example.nativebooks.android.observability.NativeSpan
+import com.example.nativebooks.android.observability.ObservabilitySystem
 
 actual object NativeTracer : KmpTracer {
-    private val tracer by lazy {
-        GlobalOpenTelemetry.getTracer("com.example.nativebooks.shared")
-    }
-    private val activeSpans = ConcurrentHashMap<String, Span>()
-
     actual override fun startSpan(
         name: String,
         attributes: Map<String, String>,
+        parent: KmpSpanContext?,
     ): KmpSpanContext {
-        val nativeSpan = tracer.spanBuilder(name).startSpan()
-        attributes.forEach { (key, value) -> nativeSpan.setAttribute(key, value) }
-
-        val nativeContext = nativeSpan.spanContext
-        val result = KmpSpanContext(
+        val nativeContext = ObservabilitySystem.beginSpan(
+            name = name,
+            attributes = attributes,
+            parent = parent?.takeIf { it.isValid }?.let {
+                NativeSpan(
+                    traceId = it.traceId,
+                    spanId = it.spanId,
+                    sampled = it.sampled,
+                    propagationHeaders = it.propagationHeaders,
+                )
+            },
+        )
+        return KmpSpanContext(
             traceId = nativeContext.traceId,
             spanId = nativeContext.spanId,
-            sampled = nativeContext.isSampled,
-        )
-        if (result.isValid) {
-            activeSpans[result.spanId] = nativeSpan
-        } else {
-            nativeSpan.end()
+            sampled = nativeContext.sampled,
+            propagationHeaders = nativeContext.propagationHeaders,
+        ).also { result ->
+            println(
+                "[KMP][NativeTracer] received native context " +
+                    "name=$name traceId=${result.traceId} spanId=${result.spanId} " +
+                    "sampled=${result.sampled} valid=${result.isValid}",
+            )
         }
-        println(
-            "[KMP][NativeTracer] received native context " +
-                "name=$name traceId=${result.traceId} spanId=${result.spanId} " +
-                "sampled=${result.sampled} valid=${result.isValid}",
-        )
-        return result
     }
 
     actual override fun endSpan(
@@ -42,32 +40,16 @@ actual object NativeTracer : KmpTracer {
         attributes: Map<String, String>,
         status: KmpSpanStatus,
     ): Boolean {
-        if (!context.isValid) {
+        if (!context.isValid) return false
+        return ObservabilitySystem.endSpan(
+            context = NativeSpan(context.traceId, context.spanId, context.sampled),
+            attributes = attributes,
+            status = status.name,
+        ).also { acknowledged ->
             println(
                 "[KMP][NativeTracer] native end result " +
-                    "spanId=${context.spanId} status=$status acknowledged=false reason=invalid-context",
+                    "spanId=${context.spanId} status=$status acknowledged=$acknowledged",
             )
-            return false
         }
-        val nativeSpan = activeSpans.remove(context.spanId)
-        if (nativeSpan == null) {
-            println(
-                "[KMP][NativeTracer] native end result " +
-                    "spanId=${context.spanId} status=$status acknowledged=false reason=span-not-found",
-            )
-            return false
-        }
-        attributes.forEach { (key, value) -> nativeSpan.setAttribute(key, value) }
-        when (status) {
-            KmpSpanStatus.OK -> nativeSpan.setStatus(StatusCode.OK)
-            KmpSpanStatus.ERROR -> nativeSpan.setStatus(StatusCode.ERROR)
-            KmpSpanStatus.UNSET -> Unit
-        }
-        nativeSpan.end()
-        println(
-            "[KMP][NativeTracer] native end result " +
-                "spanId=${context.spanId} status=$status acknowledged=true",
-        )
-        return true
     }
 }

@@ -30,8 +30,5 @@ kotlin {
 }
 
 dependencies {
-    api("io.opentelemetry:opentelemetry-api:1.62.0")
-    implementation("io.opentelemetry:opentelemetry-sdk:1.62.0")
-    implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.62.0")
-    implementation("io.opentelemetry:opentelemetry-exporter-logging:1.62.0")
+    api("com.newrelic.agent.android:android-agent:7.8.1")
 }

@@ -5,4 +5,5 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.3.21" apply false
     id("com.android.application") version "8.13.2" apply false
     id("com.android.library") version "8.13.2" apply false
+    id("com.newrelic.agent.android") version "7.8.1" apply false
 }

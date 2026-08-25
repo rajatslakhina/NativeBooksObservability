@@ -5,7 +5,7 @@ public enum ObservabilitySystem {
     private static let state = ObservabilitySystemState()
 
     /// Builds and installs the provider graph. Repeated calls return the status
-    /// of the first completed configuration instead of registering OTel twice.
+    /// of the first completed configuration instead of registering the provider twice.
     @discardableResult
     public static func configure(
         context: some AppContextProviding,
@@ -45,6 +45,81 @@ public enum ObservabilitySystem {
             type: .telemetry(.span(.start(name: name, parentSpanId: parent?.spanId))),
             attributes: attributes.observabilityValues
         ) ?? .invalid
+    }
+
+    @discardableResult
+    public static func addSpanAttributes(
+        _ context: NativeSpanContext,
+        attributes: [String: String]
+    ) -> Bool {
+        guard context.isValid else { return false }
+        track(
+            type: .telemetry(
+                .span(.addAttributes(spanId: context.spanId, attributes: attributes.observabilityValues))
+            )
+        )
+        return true
+    }
+
+    @discardableResult
+    public static func addSpanEvent(
+        _ context: NativeSpanContext,
+        name: String,
+        attributes: [String: String] = [:]
+    ) -> Bool {
+        guard context.isValid else { return false }
+        track(
+            type: .telemetry(
+                .span(
+                    .addEvent(
+                        spanId: context.spanId,
+                        name: name,
+                        attributes: attributes.observabilityValues
+                    )
+                )
+            )
+        )
+        return true
+    }
+
+    @discardableResult
+    public static func setSpanStatus(
+        _ context: NativeSpanContext,
+        status: SpanStatus
+    ) -> Bool {
+        guard context.isValid else { return false }
+        track(type: .telemetry(.span(.setStatus(spanId: context.spanId, status: status))))
+        return true
+    }
+
+    @discardableResult
+    public static func recordSpanError(
+        _ context: NativeSpanContext,
+        message: String,
+        domain: String? = nil
+    ) -> Bool {
+        guard context.isValid else { return false }
+        track(
+            type: .telemetry(
+                .span(.recordError(spanId: context.spanId, message: message, domain: domain))
+            )
+        )
+        return true
+    }
+
+    public static func log(
+        _ name: String,
+        severity: LogSeverity = .info,
+        attributes: [String: String] = [:]
+    ) {
+        track(type: .telemetry(.log(name: name, severity: severity)), attributes: attributes.observabilityValues)
+    }
+
+    public static func breadcrumb(
+        _ name: String,
+        attributes: [String: String] = [:]
+    ) {
+        track(type: .telemetry(.breadcrumb(name: name)), attributes: attributes.observabilityValues)
     }
 
     @discardableResult

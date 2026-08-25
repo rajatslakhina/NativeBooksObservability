@@ -175,7 +175,7 @@ __attribute__((swift_name("BooksRepository")))
  * @note This method converts instances of CancellationException to errors.
  * Other uncaught Kotlin exceptions are fatal.
 */
-- (void)loadBooksWithCompletionHandler:(void (^)(NSArray<SharedKitBook *> * _Nullable, NSError * _Nullable))completionHandler __attribute__((swift_name("loadBooks(completionHandler:)")));
+- (void)loadBooksParent:(SharedKitKmpSpanContext * _Nullable)parent completionHandler:(void (^)(NSArray<SharedKitBook *> * _Nullable, NSError * _Nullable))completionHandler __attribute__((swift_name("loadBooks(parent:completionHandler:)")));
 @property (readonly) BOOL lastSpanEndAcknowledged __attribute__((swift_name("lastSpanEndAcknowledged")));
 @end
 
@@ -213,24 +213,28 @@ __attribute__((swift_name("Book.Companion")))
 @end
 
 
-/** Implemented by Swift and backed by the native OpenTelemetry SDK. */
+/** Implemented by Swift and backed by the native New Relic SDK. */
 __attribute__((swift_name("IosTracerProvider")))
 @protocol SharedKitIosTracerProvider
 @required
 - (BOOL)endNativeSpanContext:(SharedKitKmpSpanContext *)context attributes:(NSDictionary<NSString *, NSString *> *)attributes status:(SharedKitKmpSpanStatus *)status __attribute__((swift_name("endNativeSpan(context:attributes:status:)")));
-- (SharedKitKmpSpanContext *)startNativeSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes __attribute__((swift_name("startNativeSpan(name:attributes:)")));
+- (SharedKitKmpSpanContext *)startNativeSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes parent:(SharedKitKmpSpanContext * _Nullable)parent __attribute__((swift_name("startNativeSpan(name:attributes:parent:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
 __attribute__((swift_name("KmpSpanContext")))
 @interface SharedKitKmpSpanContext : SharedKitBase
-- (instancetype)initWithTraceId:(NSString *)traceId spanId:(NSString *)spanId sampled:(BOOL)sampled __attribute__((swift_name("init(traceId:spanId:sampled:)"))) __attribute__((objc_designated_initializer));
+- (instancetype)initWithTraceId:(NSString *)traceId spanId:(NSString *)spanId sampled:(BOOL)sampled propagationHeaders:(NSDictionary<NSString *, NSString *> *)propagationHeaders __attribute__((swift_name("init(traceId:spanId:sampled:propagationHeaders:)"))) __attribute__((objc_designated_initializer));
 @property (class, readonly, getter=companion) SharedKitKmpSpanContextCompanion *companion __attribute__((swift_name("companion")));
-- (SharedKitKmpSpanContext *)doCopyTraceId:(NSString *)traceId spanId:(NSString *)spanId sampled:(BOOL)sampled __attribute__((swift_name("doCopy(traceId:spanId:sampled:)")));
+- (SharedKitKmpSpanContext *)doCopyTraceId:(NSString *)traceId spanId:(NSString *)spanId sampled:(BOOL)sampled propagationHeaders:(NSDictionary<NSString *, NSString *> *)propagationHeaders __attribute__((swift_name("doCopy(traceId:spanId:sampled:propagationHeaders:)")));
+
+/** Headers to attach to the downstream BFF request. */
+- (NSDictionary<NSString *, NSString *> *)distributedTracingHeaders __attribute__((swift_name("distributedTracingHeaders()")));
 - (BOOL)isEqual:(id _Nullable)other __attribute__((swift_name("isEqual(_:)")));
 - (NSUInteger)hash __attribute__((swift_name("hash()")));
 - (NSString *)description __attribute__((swift_name("description()")));
 @property (readonly) BOOL isValid __attribute__((swift_name("isValid")));
+@property (readonly) NSDictionary<NSString *, NSString *> *propagationHeaders __attribute__((swift_name("propagationHeaders")));
 @property (readonly) BOOL sampled __attribute__((swift_name("sampled")));
 @property (readonly) NSString *spanId __attribute__((swift_name("spanId")));
 @property (readonly) NSString *traceId __attribute__((swift_name("traceId")));
@@ -285,7 +289,7 @@ __attribute__((swift_name("KmpTracer")))
 
 /** Returns true only when the native layer found and ended this exact span. */
 - (BOOL)endSpanContext:(SharedKitKmpSpanContext *)context attributes:(NSDictionary<NSString *, NSString *> *)attributes status:(SharedKitKmpSpanStatus *)status __attribute__((swift_name("endSpan(context:attributes:status:)")));
-- (SharedKitKmpSpanContext *)startSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes __attribute__((swift_name("startSpan(name:attributes:)")));
+- (SharedKitKmpSpanContext *)startSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes parent:(SharedKitKmpSpanContext * _Nullable)parent __attribute__((swift_name("startSpan(name:attributes:parent:)")));
 @end
 
 __attribute__((objc_subclassing_restricted))
@@ -297,7 +301,7 @@ __attribute__((swift_name("NativeTracer")))
 @property (class, readonly, getter=shared) SharedKitNativeTracer *shared __attribute__((swift_name("shared")));
 - (BOOL)endSpanContext:(SharedKitKmpSpanContext *)context attributes:(NSDictionary<NSString *, NSString *> *)attributes status:(SharedKitKmpSpanStatus *)status __attribute__((swift_name("endSpan(context:attributes:status:)")));
 - (void)initializeProvider:(id<SharedKitIosTracerProvider>)provider __attribute__((swift_name("initialize(provider:)")));
-- (SharedKitKmpSpanContext *)startSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes __attribute__((swift_name("startSpan(name:attributes:)")));
+- (SharedKitKmpSpanContext *)startSpanName:(NSString *)name attributes:(NSDictionary<NSString *, NSString *> *)attributes parent:(SharedKitKmpSpanContext * _Nullable)parent __attribute__((swift_name("startSpan(name:attributes:parent:)")));
 @end
 
 

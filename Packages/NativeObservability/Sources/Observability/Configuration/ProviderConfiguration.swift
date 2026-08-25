@@ -14,49 +14,32 @@ public struct ProviderConfiguration: Sendable, Equatable {
     }
 }
 
-/// New Relic OTLP/HTTP settings owned by the native Swift layer.
+/// New Relic mobile-agent settings owned by the native Swift layer.
 public struct NewRelicConfiguration: Sendable, Equatable {
-    public let licenseKey: String?
+    public let applicationToken: String?
     public let serviceName: String
     public let serviceVersion: String
-    public let tracesEndpoint: URL
-    public let logsEndpoint: URL
     public let useConsoleWhenUnconfigured: Bool
 
     public init(
-        licenseKey: String?,
+        applicationToken: String?,
         serviceName: String,
         serviceVersion: String,
-        tracesEndpoint: URL? = nil,
-        logsEndpoint: URL? = nil,
         useConsoleWhenUnconfigured: Bool = true
     ) {
-        self.licenseKey = Self.normalized(licenseKey)
+        self.applicationToken = Self.normalized(applicationToken)
         self.serviceName = serviceName
         self.serviceVersion = serviceVersion
-        self.tracesEndpoint = tracesEndpoint ?? Self.defaultEndpoint(path: "/v1/traces")
-        self.logsEndpoint = logsEndpoint ?? Self.defaultEndpoint(path: "/v1/logs")
         self.useConsoleWhenUnconfigured = useConsoleWhenUnconfigured
     }
 
-    public var exportsToNewRelic: Bool { licenseKey != nil }
+    public var exportsToNewRelic: Bool { applicationToken != nil }
 
     private static func normalized(_ key: String?) -> String? {
         guard let value = key?.trimmingCharacters(in: .whitespacesAndNewlines),
               !value.isEmpty,
-              value != "YOUR_NEW_RELIC_LICENSE_KEY"
+              value != "YOUR_NEW_RELIC_APP_TOKEN"
         else { return nil }
         return value
-    }
-
-    private static func defaultEndpoint(path: String) -> URL {
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "otlp.nr-data.net"
-        components.path = path
-        guard let url = components.url else {
-            preconditionFailure("Unable to construct the fixed New Relic OTLP endpoint")
-        }
-        return url
     }
 }

@@ -29,7 +29,7 @@ import kotlinx.serialization.json.Json
  */
 internal class DummySduiApi(
     private val responseDelayMillis: Long = 350,
-) {
+) : SduiApi {
     var searchRequestCount: Int = 0
         private set
 
@@ -79,7 +79,7 @@ internal class DummySduiApi(
         }
     }
 
-    suspend fun fetchScreen(): SduiScreenDefinition {
+    override suspend fun fetchScreen(): SduiScreenDefinition {
         simulateNetwork()
         val response = client.get("https://dummy.books.local/v1/screens/discover-books")
         check(response.status == HttpStatusCode.OK) {
@@ -88,7 +88,7 @@ internal class DummySduiApi(
         return response.body()
     }
 
-    suspend fun searchBooks(query: String, page: Int): SduiSearchResult {
+    override suspend fun searchBooks(query: String, page: Int): SduiSearchResult {
         simulateNetwork()
         val response = client.get("https://dummy.books.local/v1/search") {
             parameter("q", query)

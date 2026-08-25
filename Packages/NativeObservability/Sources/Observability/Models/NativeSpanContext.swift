@@ -4,18 +4,30 @@ public struct NativeSpanContext: Sendable, Equatable {
     public let traceId: String
     public let spanId: String
     public let sampled: Bool
+    public let propagationHeaders: [String: String]
 
-    public init(traceId: String, spanId: String, sampled: Bool) {
+    public init(
+        traceId: String,
+        spanId: String,
+        sampled: Bool,
+        propagationHeaders: [String: String] = [:]
+    ) {
         self.traceId = traceId
         self.spanId = spanId
         self.sampled = sampled
+        self.propagationHeaders = propagationHeaders
     }
 
     public var isValid: Bool {
         traceId.isValidW3CHex(length: 32) && spanId.isValidW3CHex(length: 16)
     }
 
-    public static let invalid = NativeSpanContext(traceId: "", spanId: "", sampled: false)
+    public static let invalid = NativeSpanContext(
+        traceId: "",
+        spanId: "",
+        sampled: false,
+        propagationHeaders: [:]
+    )
 }
 
 private extension String {

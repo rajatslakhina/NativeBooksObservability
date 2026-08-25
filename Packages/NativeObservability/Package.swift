@@ -9,8 +9,8 @@ let package = Package(
         .macOS(.v13),
     ],
     products: [
-        // A dynamic product keeps one OTel pipeline when multiple host frameworks
-        // depend on this local package.
+        // A dynamic product keeps one native monitoring pipeline when multiple
+        // host frameworks depend on this local package.
         .library(
             name: "Observability",
             type: .dynamic,
@@ -19,22 +19,19 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/open-telemetry/opentelemetry-swift-core.git",
-            exact: "2.3.0"
-        ),
-        .package(
-            url: "https://github.com/open-telemetry/opentelemetry-swift.git",
-            exact: "2.3.0"
+            url: "https://github.com/newrelic/newrelic-ios-agent-spm.git",
+            exact: "7.7.6"
         ),
     ],
     targets: [
         .target(
             name: "Observability",
             dependencies: [
-                .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-                .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-                .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
-                .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+                .product(
+                    name: "NewRelic",
+                    package: "newrelic-ios-agent-spm",
+                    condition: .when(platforms: [.iOS])
+                ),
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),

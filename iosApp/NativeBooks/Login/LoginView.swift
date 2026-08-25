@@ -159,7 +159,7 @@ struct LoginView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: appState.observabilityStatus.exportsToNewRelic ? "waveform.badge.checkmark" : "waveform")
                 .foregroundStyle(AppTheme.accent)
-            Text("OpenTelemetry is active. \(appState.observabilityStatus.destination).")
+            Text("New Relic monitoring is active. \(appState.observabilityStatus.destination).")
                 .font(.system(.caption, design: .rounded))
                 .foregroundStyle(AppTheme.secondaryInk)
         }
@@ -172,7 +172,8 @@ struct LoginView: View {
             attributes: [
                 "app.feature": "login",
                 "login.valid": String(validation.isValid),
-            ]
+            ],
+            parent: nil
         )
         _ = NativeTracer.shared.endSpan(
             context: context,

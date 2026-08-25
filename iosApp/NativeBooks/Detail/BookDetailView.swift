@@ -75,7 +75,8 @@ struct BookDetailView: View {
                         "screen.name": "book-detail",
                         "book.id": book.id,
                         "book.category": book.category,
-                    ]
+                    ],
+                    parent: nil
                 )
             }
         }

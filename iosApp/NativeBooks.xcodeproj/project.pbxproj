@@ -192,6 +192,7 @@
 			buildPhases = (
 				794ABDE352133E004B772550 /* Sources */,
 				AFFB5E121C9922FE5232C5E1 /* Frameworks */,
+				DA78042E676BCB0202D18A17 /* Upload New Relic dSYMs */,
 			);
 			buildRules = (
 			);
@@ -268,6 +269,28 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		DA78042E676BCB0202D18A17 /* Upload New Relic dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Upload New Relic dSYMs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Debug\" ]; then\n  echo \"Skipping dSYM upload CONFIGURATION: ${CONFIGURATION}\"\n  exit 0\nfi\n\nARTIFACT_DIR=\"${BUILD_DIR%Build/*}\"\nSCRIPT=$(/usr/bin/find \"${SRCROOT}\" \"${ARTIFACT_DIR}\" -type f -name run-symbol-tool | /usr/bin/head -n 1)\n\nif [ -z \"${SCRIPT}\" ]; then\n  echo \"error: New Relic run-symbol-tool was not found\"\n  exit 1\nfi\n\nif [ -z \"${NEW_RELIC_APP_TOKEN}\" ]; then\n  echo \"error: NEW_RELIC_APP_TOKEN is not configured\"\n  exit 1\nfi\n\n/bin/sh \"${SCRIPT}\" \"${NEW_RELIC_APP_TOKEN}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6CA9036E7F569CB43A96E3C6 /* Sources */ = {

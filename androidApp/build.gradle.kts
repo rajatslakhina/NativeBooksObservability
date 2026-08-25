@@ -1,15 +1,29 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.newrelic.agent.android")
 }
 
 fun String.asBuildConfigString(): String =
     "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
-val newRelicLicenseKey = providers.gradleProperty("NEW_RELIC_LICENSE_KEY")
-    .orElse(providers.environmentVariable("NEW_RELIC_LICENSE_KEY"))
-    .getOrElse("")
+val secretsProperties = Properties().apply {
+    val secretsFile = layout.projectDirectory.file("secrets.properties").asFile
+    if (secretsFile.isFile) {
+        secretsFile.inputStream().use(::load)
+    }
+}
+
+val newRelicApplicationToken = secretsProperties
+    .getProperty("NEW_RELIC_APP_TOKEN")
+    ?.trim()
+    ?.takeIf(String::isNotEmpty)
+    ?: providers.gradleProperty("NEW_RELIC_APP_TOKEN")
+        .orElse(providers.environmentVariable("NEW_RELIC_APP_TOKEN"))
+        .getOrElse("")
 
 android {
     namespace = "com.example.nativebooks.android"
@@ -28,7 +42,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "NEW_RELIC_LICENSE_KEY", newRelicLicenseKey.asBuildConfigString())
+        buildConfigField("String", "NEW_RELIC_APP_TOKEN", newRelicApplicationToken.asBuildConfigString())
     }
 
     buildFeatures {
@@ -62,6 +76,7 @@ kotlin {
 dependencies {
     implementation(project(":shared"))
     implementation(project(":androidObservability"))
+    implementation("com.newrelic.agent.android:agent-ndk:1.1.5")
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)

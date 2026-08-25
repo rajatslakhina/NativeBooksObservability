@@ -108,6 +108,28 @@ class SduiBooksViewModelTest {
     }
 
     @Test
+    fun favoriteCanBeRemovedAfterPaginationSettles() = runTest {
+        val viewModel = viewModel(DummySduiApi(responseDelayMillis = 100))
+        viewModel.start()
+        viewModel.state.first { it.status is SduiSearchStatus.Success }
+
+        viewModel.loadNextPage()
+        viewModel.state.first {
+            val status = it.status
+            status is SduiSearchStatus.Success &&
+                status.result.pagination.currentPage == 2 &&
+                status.result.pagination.event == SduiPaginationEvent.SETTLED
+        }
+
+        viewModel.toggleFavorite("atomic-habits")
+
+        val state = viewModel.currentState
+        assertTrue(state.sections.first().items.isEmpty())
+        val allBooksItem = state.sections.last().items.first { it.book.id == "atomic-habits" }
+        assertEquals(false, allBooksItem.isFavorite)
+    }
+
+    @Test
     fun fakeErrorQueryPublishesTypedErrorState() = runTest {
         val api = DummySduiApi(responseDelayMillis = 100)
         val viewModel = viewModel(api)

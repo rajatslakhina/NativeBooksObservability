@@ -14,7 +14,7 @@ class NativeBooksApplication : Application() {
         super.onCreate()
         observabilityStatus = ObservabilitySystem.configure(
             ObservabilityConfiguration(
-                newRelicLicenseKey = BuildConfig.NEW_RELIC_LICENSE_KEY,
+                newRelicApplicationToken = BuildConfig.NEW_RELIC_APP_TOKEN,
                 serviceName = "native-books-android",
                 serviceVersion = BuildConfig.VERSION_NAME,
                 environment = if (BuildConfig.DEBUG) "development" else "production",

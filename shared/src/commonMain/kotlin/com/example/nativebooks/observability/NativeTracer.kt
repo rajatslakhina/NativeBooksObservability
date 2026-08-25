@@ -4,6 +4,7 @@ data class KmpSpanContext(
     val traceId: String,
     val spanId: String,
     val sampled: Boolean,
+    val propagationHeaders: Map<String, String> = emptyMap(),
 ) {
     val isValid: Boolean
         get() = traceId.isValidW3cId(32) && spanId.isValidW3cId(16)
@@ -14,8 +15,18 @@ data class KmpSpanContext(
         return "00-$traceId-$spanId-$flags"
     }
 
+    /** Headers to attach to the downstream BFF request. */
+    fun distributedTracingHeaders(): Map<String, String> =
+        if (isValid) propagationHeaders + mapOf("traceparent" to requireNotNull(traceparent()))
+        else emptyMap()
+
     companion object {
-        val NO_OP = KmpSpanContext(traceId = "", spanId = "", sampled = false)
+        val NO_OP = KmpSpanContext(
+            traceId = "",
+            spanId = "",
+            sampled = false,
+            propagationHeaders = emptyMap(),
+        )
     }
 }
 
@@ -30,6 +41,7 @@ interface KmpTracer {
     fun startSpan(
         name: String,
         attributes: Map<String, String> = emptyMap(),
+        parent: KmpSpanContext? = null,
     ): KmpSpanContext
 
     /** Returns true only when the native layer found and ended this exact span. */
@@ -44,6 +56,7 @@ expect object NativeTracer : KmpTracer {
     override fun startSpan(
         name: String,
         attributes: Map<String, String>,
+        parent: KmpSpanContext?,
     ): KmpSpanContext
 
     override fun endSpan(

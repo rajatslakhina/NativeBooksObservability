@@ -1,10 +1,11 @@
 package com.example.nativebooks.observability
 
-/** Implemented by Swift and backed by the native OpenTelemetry SDK. */
+/** Implemented by Swift and backed by the native New Relic SDK. */
 interface IosTracerProvider {
     fun startNativeSpan(
         name: String,
         attributes: Map<String, String>,
+        parent: KmpSpanContext?,
     ): KmpSpanContext
 
     fun endNativeSpan(
@@ -24,8 +25,9 @@ actual object NativeTracer : KmpTracer {
     actual override fun startSpan(
         name: String,
         attributes: Map<String, String>,
+        parent: KmpSpanContext?,
     ): KmpSpanContext {
-        val context = delegate?.startNativeSpan(name, attributes) ?: KmpSpanContext.NO_OP
+        val context = delegate?.startNativeSpan(name, attributes, parent) ?: KmpSpanContext.NO_OP
         println(
             "[KMP][NativeTracer] received native context " +
                 "name=$name traceId=${context.traceId} spanId=${context.spanId} " +

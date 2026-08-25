@@ -40,7 +40,12 @@ kotlin {
         }
 
         androidMain.dependencies {
-            implementation("io.opentelemetry:opentelemetry-api:1.62.0")
+            implementation(project(":androidObservability"))
+            implementation("io.ktor:ktor-client-okhttp:3.5.1")
+        }
+
+        iosMain.dependencies {
+            implementation("io.ktor:ktor-client-darwin:3.5.1")
         }
     }
 }

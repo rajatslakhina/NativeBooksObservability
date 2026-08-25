@@ -38,7 +38,7 @@ targets:
         CFBundleDisplayName: Native Books
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
-        NewRelicLicenseKey: $(NEW_RELIC_LICENSE_KEY)
+        NewRelicApplicationToken: $(NEW_RELIC_APP_TOKEN)
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UILaunchScreen:
@@ -56,6 +56,29 @@ targets:
         product: Observability
       - package: SharedKMP
         product: SharedKMP
+    postBuildScripts:
+      - name: Upload New Relic dSYMs
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "${CONFIGURATION}" = "Debug" ]; then
+            echo "Skipping dSYM upload CONFIGURATION: ${CONFIGURATION}"
+            exit 0
+          fi
+
+          ARTIFACT_DIR="${BUILD_DIR%Build/*}"
+          SCRIPT=$(/usr/bin/find "${SRCROOT}" "${ARTIFACT_DIR}" -type f -name run-symbol-tool | /usr/bin/head -n 1)
+
+          if [ -z "${SCRIPT}" ]; then
+            echo "error: New Relic run-symbol-tool was not found"
+            exit 1
+          fi
+
+          if [ -z "${NEW_RELIC_APP_TOKEN}" ]; then
+            echo "error: NEW_RELIC_APP_TOKEN is not configured"
+            exit 1
+          fi
+
+          /bin/sh "${SCRIPT}" "${NEW_RELIC_APP_TOKEN}"
 
   NativeBooksTests:
     type: bundle.unit-test

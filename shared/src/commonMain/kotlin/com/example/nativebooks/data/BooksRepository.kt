@@ -2,30 +2,32 @@ package com.example.nativebooks.data
 
 import com.example.nativebooks.model.Book
 import com.example.nativebooks.observability.KmpSpanStatus
+import com.example.nativebooks.observability.KmpSpanContext
 import com.example.nativebooks.observability.KmpTracer
 import com.example.nativebooks.observability.NativeTracer
 
 class BooksRepository internal constructor(
-    private val api: DummyBooksApi,
+    private val api: BooksApi,
     private val tracer: KmpTracer,
 ) {
-    constructor() : this(DummyBooksApi(), NativeTracer)
+    constructor() : this(OpenLibraryBooksApi(), NativeTracer)
 
     private var cachedBooks: List<Book> = emptyList()
 
     var lastSpanEndAcknowledged: Boolean = false
         private set
 
-    suspend fun loadBooks(): List<Book> {
+    suspend fun loadBooks(parent: KmpSpanContext? = null): List<Book> {
         val context = tracer.startSpan(
             name = "books.api.fetch",
             attributes = mapOf(
                 "app.feature" to "library",
                 "app.operation" to "load-books",
                 "http.request.method" to "GET",
-                "server.address" to "dummy.books.local",
-                "url.path" to "/v1/books",
+                "server.address" to "openlibrary.org",
+                "url.path" to "/search.json",
             ),
+            parent = parent,
         )
         println(
             "[KMP][BooksRepository] context accepted for Ktor " +
@@ -35,7 +37,7 @@ class BooksRepository internal constructor(
         var spanStatus = KmpSpanStatus.ERROR
         var responseStatus = "error"
         return try {
-            api.fetchBooks(context).also {
+            api.fetchBooks(context.distributedTracingHeaders()).also {
                 cachedBooks = it
                 spanStatus = KmpSpanStatus.OK
                 responseStatus = "200"
@@ -49,13 +51,12 @@ class BooksRepository internal constructor(
                 context = context,
                 attributes = mapOf(
                     "http.response.status_code" to responseStatus,
-                    "traceparent.attached" to (api.lastTraceparent != null).toString(),
+                    "network.instrumentation" to "new-relic-mobile-agent",
                 ),
                 status = spanStatus,
             )
             println(
                 "[KMP][BooksRepository] request completed " +
-                    "traceparentAttached=${api.lastTraceparent != null} " +
                     "endAcknowledged=$lastSpanEndAcknowledged",
             )
         }
